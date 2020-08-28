@@ -1,6 +1,8 @@
 #Python script to perform road segmentation
 import cv2
 import numpy as np
+import glob 
+import imutils
 from matplotlib import pyplot as plt
 
 #Utils
@@ -26,19 +28,25 @@ class road_seg_utils():
          
          
         self.rgb_img = cv2.bitwise_and(self.rgb_img,self.rgb_img,mask=mask_img)
+        cnt_img = np.copy(self.rgb_img)
         rgb_seg = np.copy(self.grayscale_img)
         
-        #Construct histogram in HSV space
+        #ColourSpaces
+        #NOTE
+        # HSV- Might be useful
+        # LAB- Cannot be used
+        # YUV- Cannot be used
         hsv_img = cv2.cvtColor(self.rgb_img,cv2.COLOR_BGR2HSV)
         h_img = hsv_img[:,:,0]
         s_img = hsv_img[:,:,1]
-        v_img = hsv_img[:,:,2]
-        display_image('Hue Image',h_img)
-        display_image('Sat Image',s_img)
-        display_image('Value Image',v_img)
+        # v_img = hsv_img[:,:,2]
+        # display_image('Hue Image',h_img)
+        # display_image('Sat Image',s_img)
+        # display_image('Value Image',v_img)
+       
 
         #TODO: Initial Estimate: To be improved
-        road_color_range = [(50,5,0),(150,25,255)]
+        road_color_range = [(50,5,0),(150,20,255)]
         road_mask = cv2.inRange(hsv_img,road_color_range[0],road_color_range[1])
         road_seg = cv2.bitwise_and(rgb_seg,rgb_seg,mask=road_mask)
         display_image("Road Segmentation",road_seg)
@@ -46,7 +54,24 @@ class road_seg_utils():
         #Thresholding
         # road_seg = cv2.GaussianBlur(road_seg,(5,5),0)
         ret,thresh_img_1 = cv2.threshold(road_seg,0,255,cv2.THRESH_BINARY)
+
+        #Erosion
+        kernel = np.ones((5,5),np.uint8)
+        thresh_img_1 = cv2.morphologyEx(thresh_img_1, cv2.MORPH_OPEN, kernel)
         display_image("thresh_image",thresh_img_1)
+
+
+        #Find largest contour
+        if(cv2.__version__[0] > '3'):
+            cnts,hierarchy = cv2.findContours(thresh_img_1,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        else:
+            _,cnts,hierarchy = cv2.findContours(thresh_img_1,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+        
+        if(len(cnts) != 0):
+            c = sorted(cnts,key=cv2.contourArea,reverse=True)
+            cnt_img = cv2.drawContours(cnt_img,c,0,(0,0,255),5)
+            display_image("Contour Image",cnt_img)
+
         
 
 
@@ -64,6 +89,8 @@ class road_seg_utils():
 
 
 if __name__ == '__main__':
-    img_path = '/home/varghese/Transvahan/demo/autonomous_parking_vision/python_scripts/ZED_image673.jpeg'
-    road_seg_utils_obj = road_seg_utils(img_path)
-    road_seg_utils_obj.test()
+    for img_path in glob.glob('/home/varghese/Transvahan/demo/autonomous_parking_vision/python_scripts/*.jpeg'):
+    # img_path = '/home/varghese/Transvahan/demo/autonomous_parking_vision/python_scripts/ZED_image673.jpeg'
+        print('img_path:',img_path)
+        road_seg_utils_obj = road_seg_utils(img_path)
+        road_seg_utils_obj.test()
