@@ -13,6 +13,9 @@ def display_image(winname,frame):
     if(key & 0xFF == ord('q')):
         cv2.destroyAllWindows()
 
+def breakpoint():
+    inp = input("Waiting for input...")
+
 class road_seg_utils():
     def __init__(self,img_path):
         self.rgb_img = cv2.imread(img_path)
@@ -26,9 +29,10 @@ class road_seg_utils():
         # mask_img = np.zeros((int(self.rgb_img.shape[0]/2),self.rgb_img.shape[1]),dtype = np.uint8)
         # display_image("mask_img",mask_img)
          
-         
+        edge_img = np.copy(self.rgb_img)
         self.rgb_img = cv2.bitwise_and(self.rgb_img,self.rgb_img,mask=mask_img)
         cnt_img = np.copy(self.rgb_img)
+        extreme_pt_img = np.copy(self.rgb_img)
         rgb_seg = np.copy(self.grayscale_img)
         
         #ColourSpaces
@@ -49,7 +53,7 @@ class road_seg_utils():
         road_color_range = [(50,5,0),(150,20,255)]
         road_mask = cv2.inRange(hsv_img,road_color_range[0],road_color_range[1])
         road_seg = cv2.bitwise_and(rgb_seg,rgb_seg,mask=road_mask)
-        display_image("Road Segmentation",road_seg)
+        # display_image("Road Segmentation",road_seg)
     
         #Thresholding
         # road_seg = cv2.GaussianBlur(road_seg,(5,5),0)
@@ -58,19 +62,39 @@ class road_seg_utils():
         #Erosion
         kernel = np.ones((5,5),np.uint8)
         thresh_img_1 = cv2.morphologyEx(thresh_img_1, cv2.MORPH_OPEN, kernel)
-        display_image("thresh_image",thresh_img_1)
+        # display_image("thresh_image",thresh_img_1)
 
 
         #Find largest contour
-        if(cv2.__version__[0] > '3'):
-            cnts,hierarchy = cv2.findContours(thresh_img_1,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        else:
-            _,cnts,hierarchy = cv2.findContours(thresh_img_1,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cv2.findContours(thresh_img_1,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
         
         if(len(cnts) != 0):
-            c = sorted(cnts,key=cv2.contourArea,reverse=True)
-            cnt_img = cv2.drawContours(cnt_img,c,0,(0,0,255),5)
+            c = max(cnts,key=cv2.contourArea)
+            cnt_img = cv2.drawContours(cnt_img,[c],0,(0,0,255),5)
             display_image("Contour Image",cnt_img)
+
+            #Find extreme points along the contour
+            hull = cv2.convexHull(c,clockwise=True,returnPoints=True)
+            cnt_img = cv2.drawContours(cnt_img,[hull],0,(0,255,0),5)
+            display_image("Contour Image",cnt_img)
+
+            cv2.fillPoly(self.rgb_img,pts = [hull], color=(0,0,0))
+            display_image("Masked Image",self.rgb_img)
+
+            #Edge detection
+            self.rgb_img = cv2.bilateralFilter(self.rgb_img,15,75,75)
+            display_image("Blurred Image",self.rgb_img)
+
+            #Canny edge detection thresholds
+            sigma = 0.20
+            v = np.median(edge_img)
+            lower = int(max(0,(1.0-sigma)*v))
+            upper = int(min(255,(1+sigma)*v))
+            self.rgb_img = cv2.Canny(self.rgb_img,lower,upper)
+            display_image('Edge Image',self.rgb_img)
+        
+            
 
         
 
