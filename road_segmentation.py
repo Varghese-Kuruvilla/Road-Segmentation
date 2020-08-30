@@ -12,6 +12,7 @@ def display_image(winname,frame):
     key = cv2.waitKey(0)
     if(key & 0xFF == ord('q')):
         cv2.destroyAllWindows()
+        exit(0)
 
 def breakpoint():
     inp = input("Waiting for input...")
@@ -50,17 +51,16 @@ class road_seg_utils():
         for line in lines:
             rho,theta = line[0]
             if((abs(theta) >= 0.349 and abs(theta) <= 1.22) or (abs(theta) >= 1.92 and abs(theta) <= 2.79)):
-                print('rho,theta:',rho,theta)
                 a = np.cos(theta)
                 b = np.sin(theta)
                 x0 = a*rho
                 y0 = b*rho
-                x1 = int(x0 + 1000*(-b))
-                y1 = int(y0 + 1000*(a))
-                x2 = int(x0 - 1000*(-b))
-                y2 = int(y0 - 1000*(a))
+                x1 = int(x0 + 1500*(-b))
+                y1 = int(y0 + 1500*(a))
+                x2 = int(x0 - 1500*(-b))
+                y2 = int(y0 - 1500*(a))
 
-                cv2.line(line_img,(x1,y1),(x2,y2),(0,0,255),2)
+                cv2.line(line_img,(int(x1),int(y1)),(int(x2),int(y2)),(0,0,255),2)
                 display_image("line Image",line_img)
                 
 
