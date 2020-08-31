@@ -10,7 +10,7 @@ from statistics import mean
 def display_image(winname,frame):
     cv2.namedWindow(winname,cv2.WINDOW_NORMAL)
     cv2.imshow(winname,frame)
-    key = cv2.waitKey(1)
+    key = cv2.waitKey(0)
     if(key & 0xFF == ord('q')):
         cv2.destroyAllWindows()
         exit(0)
@@ -26,6 +26,38 @@ class road_seg_utils():
         else:
             self.rgb_img = None
             self.grayscale_img = None
+
+
+    def colour_segment(self,frame=None):
+        if(frame != None):
+            self.rgb_img = frame
+            self.grayscale_img = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+
+        #Mask top half of the image
+        mask_img = np.zeros_like(self.rgb_img[:,:,0])
+        mask_img[int(self.rgb_img.shape[0]/2):int(self.rgb_img.shape[0]),:] = [255]
+        self.rgb_img = cv2.bitwise_and(self.rgb_img,self.rgb_img,mask=mask_img)
+        # display_image('mask_image',self.rgb_img)
+
+        rgb_color_seg = np.copy(self.rgb_img)
+
+
+        hsv_img = cv2.cvtColor(self.rgb_img,cv2.COLOR_BGR2HSV)
+        h_img = hsv_img[:,:,0]
+        s_img = hsv_img[:,:,1]
+        v_img = hsv_img[:,:,2]
+
+        # display_image("Hue Image",h_img)
+        # display_image("Sat Image",s_img)
+        # display_image("Value Image",v_img)
+
+        road_color_range = [(80,1,94),(180,44,254)]
+        road_mask = cv2.inRange(hsv_img,road_color_range[0],road_color_range[1])
+        road_seg = cv2.bitwise_and(rgb_color_seg,rgb_color_seg,mask=road_mask)
+        display_image("Road Segmentation",road_seg)
+        
+        
+
 
 
     def test_1(self,frame=None):
@@ -101,19 +133,19 @@ class road_seg_utils():
             display_image("Line Image",line_img)
 
 if __name__ == '__main__':
-    # for img_path in glob.glob('/home/varghese/Transvahan/demo/autonomous_parking_vision/python_scripts/*.jpeg'):
-    #     # img_path = '/home/varghese/Transvahan/demo/autonomous_parking_vision/python_scripts/ZED_image159.jpeg'
-    #     print('img_path:',img_path)
-    #     road_seg_utils_obj = road_seg_utils(img_path)
-    #     road_seg_utils_obj.test_1()
+    for img_path in glob.glob('/home/varghese/Transvahan/demo/autonomous_parking_vision/python_scripts/*.jpeg'):
+        # img_path = '/home/varghese/Transvahan/demo/autonomous_parking_vision/python_scripts/ZED_image159.jpeg'
+        print('img_path:',img_path)
+        road_seg_utils_obj = road_seg_utils(img_path)
+        road_seg_utils_obj.colour_segment()
 
     #Testing
-    road_seg_utils_obj = road_seg_utils()
-    cap = cv2.VideoCapture('/home/varghese/Transvahan/demo/autonomous_parking_vision/data_ece_23rd_August/Varghese/second/out.avi')
-    while(True):
-        ret,frame = cap.read()
-        road_seg_utils_obj.test_1(frame)
+    # road_seg_utils_obj = road_seg_utils()
+    # cap = cv2.VideoCapture('/home/varghese/Transvahan/demo/autonomous_parking_vision/data_ece_23rd_August/Varghese/second/out.avi')
+    # while(True):
+    #     ret,frame = cap.read()
+    #     road_seg_utils_obj.test_1(frame)
     
-    cap.release()
-    cv2.destroyAllWindows()
+    # cap.release()
+    # cv2.destroyAllWindows()
 
