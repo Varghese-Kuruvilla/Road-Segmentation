@@ -30,11 +30,6 @@ class road_seg_utils():
             self.rgb_img = None
             self.grayscale_img = None
 
-
-    def texture_segment(self):
-        '''
-        Function to segment the road region based on texture
-        '''
         
     def colour_segment(self,frame=None):
         #TODO: Improve segmentation based on colour
