@@ -15,7 +15,10 @@ gen_ways.py- generate the waypoints between the starting vehicle location and th
 
 module_7_pipeline.py - combination of module_7.py,pipeline.py and gen_ways.py.
 
-
+segmentationobj.py - is just like segmentation.py but it returns a few extra parameters
+darknet_proper_fps.py- is the object detection code,(yolov4)
+module_7_pipeline_obj_proper_track_copy.py - is to segment,and detect obstacle (covering a few cases) and to either stop the vehicle or go to destination.
+This script calls segmentationobj.py and darknet_proper_fps.py.
 
 
 
